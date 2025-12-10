@@ -30,7 +30,7 @@ def ingest_file(file_path: Path, vector_store: ChromaVectorStore):
         VectorStoreIndex.from_documents(
             documents=documents,
             storage_context=storage_context,
-            transformations=[SentenceSplitter(chunk_size=512, chunk_overlap=20)],
+            transformations=[SentenceSplitter(chunk_size=256, chunk_overlap=20)],
             show_progress=True,
         )
 
@@ -41,10 +41,23 @@ def answer(message: dict, history: list, vector_store: ChromaVectorStore):
     vector_index = VectorStoreIndex.from_vector_store(
         vector_store=vector_store,
     )
-    query_engine = vector_index.as_query_engine()
-    result = query_engine.query(message["text"])
+    query_engine = vector_index.as_query_engine(
+        similarity_top_k=5,
+        similarity_cutoff=0.4,
+    )
+    input_text = message["text"]
+    result = query_engine.query(input_text)
     if result.source_nodes:
-        return str(result)
+        response = str(result)
+        response += "\n\n\nMy answer is based on the following chunks:"
+        sorted_chunks = sorted(result.source_nodes, key=lambda node: node.score, reverse=True)
+        for chunk in sorted_chunks:
+            response += f"\n\nSimilarity Score: {chunk.score:.2f}:"
+            response += f"\nChunk: {chunk.node.get_text()}"
+            # sum_prompt = f"Summarize this chunk in 1 sentence:\n{chunk.node.get_text()}"
+            # sum_response = Settings.llm.complete(sum_prompt)
+            # response += f"\nSummary: {sum_response.text}"
+        return response
     else:
         return "Please upload at least one file."
 

@@ -40,7 +40,6 @@ The actual [app](./app.py) launches a gradio app on a local web server, where yo
 
 ## Roadmap
 
-- output the text locations of the retrieved nodes to provide source references of RAG answer
 - adjust the tool such that it works for audio data, use model for transcription and a suitable embedding
 - provide audio timestamps of retrieved nodes as source references
 - include option to turn off QA and only do semantic search
