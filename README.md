@@ -4,16 +4,49 @@
 
 A project to experiment around with RAG on provided text, audio or video
 
+## Installation on Windows
+
+Clone this repo to your folder
+```shell
+git clone https://github.com/Razzmie1/rag-lab.git path/to/your/folder
+cd path/to/your/folder
+```
+Create a `.env` file and define your API key (replace `YOUR_KEY` with your actual Ollama API key)
+```shell
+echo OLLAMA_API_KEY=YOUR_KEY > .env
+```
+Create a virtual environment with [anaconda](https://www.anaconda.com/download/success#download)
+```shell
+conda env create -f environment.yml
+conda activate rag_lab
+```
+Alternatively, you can also create the environment using venv. Note that `python=3.10` was used for this project.
+```shell
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
+```
+
+
+## Usage
+
+You can run each python scripts with `python script_name.py`
+
+The [ollama_cloud_example](./ollama_cloud_example.py) simply tests whether the local embedding and the interaction with the Ollama cloud LLM works.
+
+The [rag_example](./rag_example.py) tests a RAG query on a folder of documents. Here, you should modify the `INPUT_DIR` and `QUERY` to your needs.
+
+The actual [app](./app.py) launches a gradio app on a local web server, where you can input a document file and a query for it. The chatbot will then respond to it using RAG.
+
 ## Roadmap
 
-- build a RAG tool that uses provided text file inputs and answers questions on that document
-- build gradio app for simple prototype that interacts with user who provides document (file or directory) and query
-- include semantic search to output the text locations for the search query, possibly with agent deciding between QA and Search
-- write comprehensive tests
+- output the text locations of the retrieved nodes to provide source references of RAG answer
 - adjust the tool such that it works for audio data, use model for transcription and a suitable embedding
+- provide audio timestamps of retrieved nodes as source references
+- include option to turn off QA and only do semantic search
 - perhaps embed the audio itself and not only the speech transcription, e.g. to search for specific sounds in audio
 - same steps for video inputs, extract audio and frames, each with its own embedding
 
 ## Features
 
-Llama3, LlamaIndex, Gradio
+Ollama, LlamaIndex, Gradio, ChromaDB

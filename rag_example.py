@@ -10,6 +10,12 @@ from pathlib import Path
 import chromadb
 import os, subprocess, httpx
 
+# Directory with text documents
+INPUT_DIR = Path("data/")
+# Query for the documents
+QUERY = "Summarize Flow Matching in 5 bullet points."
+
+
 def is_ollama_running(host="http://localhost:11434"):
     try:
         r = httpx.get(f"{host}/api/tags", timeout=2)
@@ -40,7 +46,7 @@ chroma_collection = db.get_or_create_collection("my_collection")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
 if chroma_collection.count() == 0:
-    input_dir = Path("data/")
+    input_dir = INPUT_DIR
     documents = SimpleDirectoryReader(input_dir=input_dir).load_data()
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     vector_index = VectorStoreIndex.from_documents(
@@ -55,5 +61,5 @@ else:
     )
 
 query_engine = vector_index.as_query_engine(similarity_top_k=10)
-response = query_engine.query("Summarize Flow Matching in 5 bullet points.")
+response = query_engine.query(QUERY)
 print(response)
