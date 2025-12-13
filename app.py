@@ -1,7 +1,7 @@
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings, StorageContext, Document
 from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.readers.base import BaseReader
 from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters, VectorStoreQuery
-from llama_index.core import StorageContext
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.llms.ollama import Ollama
@@ -12,6 +12,15 @@ from functools import partial
 import gradio as gr
 import os, subprocess, httpx
 import chromadb
+import whisper
+
+class LocalWhisperReader(BaseReader):
+    def load_data(self, file_path: Path, extra_info=None) -> list[Document]:
+        model = whisper.load_model("tiny")
+        result = model.transcribe(file_path.as_posix())
+        text = result["text"]
+        metadata = {"file_name": file_path.name, "file_path": file_path.as_posix(), "source": "audio"}
+        return [Document(text=text, metadata=metadata, extra_info=extra_info or {})]
 
 def is_ollama_running(host="http://localhost:11434"):
     try:
@@ -26,7 +35,15 @@ def ingest_file(file_path: Path, vector_store: ChromaVectorStore):
     result = vector_store.query(f_exists_query)
     if not result.ids:
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        documents = SimpleDirectoryReader(input_files=[file_path]).load_data()
+
+        reader = SimpleDirectoryReader(
+            input_files=[file_path], 
+            file_extractor={
+                ".mp3": LocalWhisperReader(),
+                ".m4a": LocalWhisperReader(),
+                ".wav": LocalWhisperReader(),
+            },)
+        documents = reader.load_data()
         VectorStoreIndex.from_documents(
             documents=documents,
             storage_context=storage_context,
@@ -89,7 +106,7 @@ def main():
         type="messages",
         title="Llama Index RAG Chatbot",
         description="Upload any text or pdf files and ask questions about them!",
-        textbox=gr.MultimodalTextbox(file_types=[".txt", ".pdf"]),
+        textbox=gr.MultimodalTextbox(file_types=["text", "audio"]),
         multimodal=True,
     )
     demo.launch(debug=False)
